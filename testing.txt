@@ -1,0 +1,10 @@
+Tests;
+
+curl -v --proxy http://localhost:45807 http://localhost:45806/home.html
+curl -v --proxy http://localhost:45807 'http://localhost:45806/cgi-bin/slow?1&4096&1'
+
+tiny/cgi-bin/slow?1&4096 
+
+cgi-bin/slow?1&4096&1
+
+Put a different break statement in the write loop

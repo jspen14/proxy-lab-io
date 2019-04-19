@@ -1,0 +1,53 @@
+|___________________________________ CLIENT REQUEST STATES ___________________________________ 
+	Params: 
+		- struct request_info *info
+
+___________________________________ READ_REQUEST ___________________________________
+	
+
+
+___________________________________ IN epoll_wait() LOOP ___________________________________
+
+ - If the result was a timeout (i.e., return value from epoll_wait() is 0), check if a global flag has been set by a handler and, if so, 			break out of the loop; otherwise, continue.
+ 
+ - If the result was an error (i.e., return value from epoll_wait() is less than 0), handle the error appropriately (see the man page for 			epoll_wait for more).
+ 
+ - If there was no error, you should loop through all the events and handle each appropriately.  See next bullet items.
+ 
+ - If event corresponds with listenfd socket
+		- accept() any and all client connections, 
+		- configure each to use non-blocking I/O,
+		- register each returned client socket with the epoll instance that you created, for reading, using edge-triggered monitoring.  		- When accept returns less than 0, stop calling accept() 
+		- If errno is set to EAGAIN or EWOULDBLOCK, no more clients currently waiting.
+ 
+ - If an event corresponds tp a client socket or with a the proxied request to an upstream server (server socket)
+		- Determine where you are in terms of handling the corresponding client request
+		- Begin (or resume) handling it from that position.  
+			- If event description indicates it's appropriate, read or write while return > 0
+			- Once a value less than 0 is returned, check if errno is EAGAIN or EWOULDBLOCK
+				- If so, that is an indicator that there is no more data to be read from or written to that the file descriptor 
+
+
+___________________________________ REQUEST STRUCT ___________________________________ 
+struct request_info {
+  int client_sfd;
+  int server_sfd;
+  char *state;
+  char *buf;
+  int bytes_read_from_client;
+  int bytes_to_write_to_server;
+  int bytes_written_to_server;
+  int bytes_read_from_server;
+  int bytes_written_to_client;
+};
+
+___________________________________ ON HTTP SERVER START-UP ___________________________________
+
+ - Create an epoll instance with epoll_create1()
+ - Set up your listen socket (as you've done in previous labs), and configure it to use non-blocking I/O (see the man page for fcntl()  		for how to do this).
+ - Register your listen socket with the epoll instance that you created, for reading.
+ - Open your log file.  Since this server is single-threaded, you don't need to use producer-consumer threads, and you can log directly, 			rather than sending it to a queue (see Client Request Handling below).
+ - Initialize your cache.  This time, there is no need to guard read or write access to the cache with semaphores because only a single 		thread will be accessing the cache.
+ - Start an epoll_wait() loop, with a timeout of 1 second.
+
+
